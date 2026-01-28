@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promotions Playground</title>
+    
+    <style>
+        /* --- GLOBAL RESET & THEME VARIABLES --- */
+        * { box-sizing: border-box; outline: none; }
+
+        :root {
+            --primary-green: #97C93F;
+            --accent-green: #B4E05E; 
+            --dark-green: #689f1c; 
+            --bg-color: #f4f7f6;       
+            --white: #ffffff;
+            --border-color: #e1e4e8;
+            --text-main: #505050;
+            --text-heading: #333333;
+            --highlight-bg: rgba(255, 235, 59, 0.6); 
+            --highlight-border: rgba(253, 216, 53, 0.8);
+            --row-alt: #f8fdf8;        
+            --row-hover: #f1fae6;      
+        }
+
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; height: auto; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--white); 
+            color: var(--text-main);
+            font-size: 14px;
+            overflow: visible; 
+        }
+
+        .container { width: 100%; height: auto; display: flex; flex-direction: column; }
+
+        .controls {
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex; flex-direction: column; 
+            gap: 20px; background-color: #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            z-index: 100;
+            position: sticky;
+            top: 0; 
+        }
+
+        .control-row { display: flex; align-items: center; width: 100%; flex-wrap: wrap; gap: 15px; }
+        .control-row.top { justify-content: space-between; }
+        .control-row.bottom { justify-content: space-between; padding-top: 5px; }
+
+        .search-wrapper { width: 500px; max-width: 100%; position: relative; border-radius: 50px; }
+        .search-wrapper input {
+            width: 100%;
+            padding: 10px 45px 10px 45px;
+            border: 2px solid #efefef;
+            border-radius: 50px; 
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            background-color: #fcfdfc;
+            transition: all 0.3s ease;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23cccccc' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 18px center;
+        }
+        .search-wrapper input::placeholder { color: #d1d1d1; font-style: italic; opacity: 1; font-weight: 400; }
+        .search-wrapper input:focus { border-color: var(--primary-green); background-color: #fff; box-shadow: 0 4px 12px rgba(151, 201, 63, 0.1); }
+
+        .search-clear {
+            position: absolute; right: 15px; top: 50%;
+            transform: translateY(-50%); width: 18px; height: 18px;
+            background: #eee; color: #999; border-radius: 50%;
+            text-align: center; line-height: 17px; font-size: 10px;
+            cursor: pointer; display: none; z-index: 20;
+        }
+
+        .chip-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .filter-label { font-weight: 700; color: #bbb; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-right: 5px; }
+        .chip-content {
+            display: inline-block; padding: 8px 18px; font-size: 13px; 
+            border-radius: 30px; background-color: #fff; color: #666; 
+            font-weight: 600; border: 2px solid #f0f0f0; transition: all 0.2s ease; cursor: pointer;
+        }
+        .filter-chip input { display: none; }
+        .filter-chip input:checked + .chip-content { background-color: var(--primary-green); border-color: var(--primary-green); color: white; box-shadow: 0 4px 10px rgba(151, 201, 63, 0.2); }
+
+        .toggles-container { display: flex; align-items: center; gap: 25px; }
+        .toggle-label { display: flex; align-items: center; cursor: pointer; gap: 10px; }
+        .toggle-checkbox { position: absolute; opacity: 0; width: 0; height: 0; }
+        .toggle-switch { position: relative; width: 34px; height: 18px; background-color: #e0e0e0; border-radius: 20px; transition: 0.3s; }
+        .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background-color: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .toggle-checkbox:checked + .toggle-switch { background-color: var(--primary-green); }
+        .toggle-checkbox:checked + .toggle-switch::after { transform: translateX(16px); }
+        .toggle-text { font-weight: 600; color: #777; font-size: 13px; }
+        .toggle-checkbox:checked ~ .toggle-text { color: var(--text-heading); }
+        .nested-toggle { max-width: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease; }
+        .nested-toggle.visible { max-width: 200px; opacity: 1; margin-left: 5px; padding-left: 15px; border-left: 1px solid #eee; }
+
+        .results-info { display: flex; align-items: center; gap: 15px; font-size: 13px; color: #888; }
+        .clear-btn { display: none; background-color: #fffafa; color: #e57373; border: 1px solid #ffebee; padding: 5px 15px; border-radius: 20px; font-weight: 700; font-size: 11px; cursor: pointer; }
+
+        .table-container { width: 100%; position: relative; overflow: visible; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: auto; }
+        thead th {
+            font-family: 'Segoe UI', sans-serif; font-size: 13px; font-weight: 700; background-color: var(--primary-green); color: #ffffff;
+            text-align: left; padding: 15px 15px; white-space: nowrap; position: sticky; top: 137px; z-index: 50;
+        }
+        tbody td { padding: 12px 15px; border-bottom: 1px solid #f2f2f2; vertical-align: top; color: #444; font-size: 13px; line-height: 1.5; }
+        mark { background-color: var(--highlight-bg); color: inherit; border-bottom: 2px solid var(--highlight-border); }
+        .discount-badge { display: inline-block; padding: 4px 10px; border-radius: 15px; font-weight: 700; font-size: 12px; background-color: #fff; color: #444; border: 1px solid #eee; }
+        
+        /* SWAP LOGIC */
+        .swap-container { cursor: help; min-height: 1.5em; position: relative; display: block; }
+        .swap-main-text { border-bottom: 1px dotted #ccc; }
+        .swap-hover-text { display: none; color: var(--dark-green); font-weight: 600; }
+        .swap-prefix { color: #000; font-size: 13px; text-transform: uppercase; margin-right: 6px; font-weight: 700; }
+        .swap-container:hover .swap-main-text { display: none; }
+        .swap-container:hover .swap-hover-text { display: inline; }
+
+        tbody tr:nth-child(even) { background-color: var(--row-alt); }
+        tbody tr:hover { background-color: var(--row-hover) !important; }
+        .expired-row { background-color: #fafafa !important; opacity: 0.6; }
+        .expired-row td { color: #aaa !important; }
+
+        #filterHint {
+            position: fixed; top: 15px; left: 50%; transform: translateX(-50%) translateY(-50px);
+            background: #333; color: #fff; padding: 10px 20px;
+            border-radius: 50px; font-size: 13px; font-weight: 600; pointer-events: none;
+            opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 200;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            display: flex; align-items: center; gap: 10px;
+        }
+        #filterHint.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .empty-state {
+            padding: 80px 40px; text-align: center; max-width: 400px; margin: 0 auto;
+            display: flex; flex-direction: column; align-items: center; gap: 15px;
+        }
+        .empty-icon { width: 64px; height: 64px; color: #eee; margin-bottom: 10px; }
+        .empty-title { font-size: 18px; font-weight: 700; color: #333; margin: 0; }
+        .empty-text { font-size: 14px; color: #888; line-height: 1.6; margin: 0; }
+        .empty-btn { 
+            margin-top: 10px; background: var(--primary-green); color: white; 
+            border: none; padding: 10px 25px; border-radius: 50px; 
+            font-weight: 700; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(151, 201, 63, 0.3);
+        }
+        .empty-btn:hover { background: var(--dark-green); transform: translateY(-1px); }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: flex-start; padding-top: 15vh; animation: fadeIn 0.3s; }
+        .modal-overlay.active { display: flex; }
+        .modal-card { background: #fff; width: 90%; max-width: 420px; border-radius: 16px; padding: 35px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.15); animation: popIn 0.3s; }
+        .modal-title { font-size: 19px; font-weight: 700; color: #333; margin-bottom: 10px; }
+        .modal-text { font-size: 14px; color: #666; margin-bottom: 25px; line-height: 1.5; }
+        .modal-actions { display: flex; gap: 12px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 50px; font-weight: 700; border: none; cursor: pointer; font-size: 13px; }
+        .modal-btn.yes { background-color: var(--primary-green); color: white; }
+        .modal-btn.no { background-color: #f5f5f5; color: #888; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div id="filterHint">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Press again to deselect filter</span>
+    </div>
+
+    <div id="expiredModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-title">Expired matches found</div>
+            <div class="modal-text" id="modalText">We found promotions matching your search, but they have expired.</div>
+            <div class="modal-actions">
+                <button class="modal-btn yes" onclick="enableExpiredView()">Show expired</button>
+                <button class="modal-btn no" onclick="dismissExpiredPrompt()">Clear search</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="controls">
+            <div class="control-row top">
+                <div class="search-wrapper">
+                    <input type="text" id="searchInput" placeholder="" onkeyup="filterData()">
+                    <span id="searchClear" class="search-clear" onclick="clearSearch()">&#x2715;</span>
+                </div>
+                <div class="chip-group">
+                    <span class="filter-label">Filter:</span>
+                    <label class="filter-chip"><input type="checkbox" value="Microsoft 365" onchange="handleChipClick(this)"><span class="chip-content">Microsoft 365</span></label>
+                    <label class="filter-chip"><input type="checkbox" value="Dynamics" onchange="handleChipClick(this)"><span class="chip-content">Dynamics</span></label>
+                    <label class="filter-chip"><input type="checkbox" value="Azure" onchange="handleChipClick(this)"><span class="chip-content">Azure</span></label>
+                    <label class="filter-chip"><input type="checkbox" value="Security" onchange="handleChipClick(this)"><span class="chip-content">Security</span></label>
+                    <label class="filter-chip"><input type="checkbox" value="Copilot" onchange="handleChipClick(this)"><span class="chip-content">Copilot</span></label>
+                </div>
+            </div>
+            <div class="control-row bottom">
+                <div class="toggles-container">
+                    <label class="toggle-label"><input type="checkbox" class="toggle-checkbox" id="showExpiredCheck" onchange="handleExpiredToggle(); returnFocus();"><div class="toggle-switch"></div><span class="toggle-text">Show expired</span></label>
+                    <label class="toggle-label nested-toggle" id="expiredOnlyWrapper"><input type="checkbox" class="toggle-checkbox" id="expiredOnlyCheck" onchange="filterData(); returnFocus();"><div class="toggle-switch"></div><span class="toggle-text">Expired ONLY</span></label>
+                    <label class="toggle-label"><input type="checkbox" class="toggle-checkbox" id="newThisMonthCheck" onchange="filterData(); returnFocus();"><div class="toggle-switch"></div><span class="toggle-text">New this month</span></label>
+                </div>
+                <div class="results-info"><span><strong><span id="resultCount">0</span></strong> matches</span><button id="clearBtn" class="clear-btn" onclick="resetFilters(); returnFocus();">Reset Filters</button></div>
+            </div>
+        </div>
+
+        <div id="status" style="padding:40px; text-align:center; color:#ccc;">Loading...</div>
+
+        <div class="table-container">
+            <table id="promoTable">
+                <thead></thead>
+                <tbody id="promoBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/4.3.9/iframeResizer.contentWindow.min.js"></script>
+    <script>
+        const DATE_OVERRIDES = [{ triggerPhrase: "Bridge to cloud 3", newStartDate: "January 1, 2026" }];
+        const TEXT_REPLACEMENTS = [
+            { find: "licence", replace: "license" }, { find: "M365", replace: "Microsoft 365" }, { find: "D365", replace: "Dynamics 365" },
+            { find: "agent", replace: "Agent" }, { find: "Purview suite", replace: "Purview Suite" }, { find: "Defender suite", replace: "Defender Suite" },
+            { find: "apps for business", replace: "Apps for Business" }, { find: "Microsoft 365 Purview", replace: "Microsoft Purview" }, { find: "—", replace: "-" },
+        ];
+
+        const DATA_URL = "https://licensing-school.nekoweb.org/PromotionsPlaygroundData.txt";
+        let globalData = [], headers = [];
+        
+        const COL_NAME = "Official promotion name", COL_PROD = "Item(s) on promotion", COL_DISC = "Discount", COL_START = "Start date", COL_END = "End date", COL_PREREQ = "Prerequisites and other notes";
+
+        let hintTimer;
+        function handleChipClick(checkbox) {
+            if (checkbox.checked) {
+                const hint = document.getElementById('filterHint');
+                hint.classList.add('visible');
+                clearTimeout(hintTimer);
+                hintTimer = setTimeout(() => { hint.classList.remove('visible'); }, 2500);
+            }
+            filterData();
+            returnFocus();
+        }
+
+        function returnFocus() {
+            const input = document.getElementById('searchInput');
+            if(!document.getElementById('expiredModal').classList.contains('active')) {
+                input.focus();
+            }
+        }
+
+        async function loadData() {
+            try {
+                const response = await fetch(DATA_URL);
+                const rawText = await response.text();
+                parseTextData(rawText);
+                document.getElementById('status').style.display = 'none';
+            } catch (e) { document.getElementById('status').innerText = "Error loading data."; }
+        }
+
+        function parseTextData(text) {
+            const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+            headers = lines[0].split('\t').map(h => h.trim());
+            globalData = lines.slice(1).map(line => {
+                const values = line.split('\t'); let obj = {};
+                headers.forEach((h, i) => {
+                    let val = values[i] ? values[i].trim() : "";
+                    TEXT_REPLACEMENTS.forEach(item => { val = val.replace(new RegExp(item.find, "gi"), item.replace); });
+                    obj[h] = val;
+                });
+                if (obj[COL_NAME]) {
+                    DATE_OVERRIDES.forEach(rule => { if (obj[COL_NAME].toLowerCase().includes(rule.triggerPhrase.toLowerCase())) obj[COL_START] = rule.newStartDate; });
+                }
+                return obj;
+            });
+            filterData();
+        }
+
+        function getSearchRegex(query) {
+            if (!query) return null;
+            const parts = query.toLowerCase().split(/\s+/).filter(p => p !== "" && p !== "for");
+            const pattern = parts.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join("(?:\\s+for)?\\s+");
+            return new RegExp(`(${pattern})`, 'gi');
+        }
+
+        function highlightText(text, query) {
+            const regex = getSearchRegex(query);
+            return regex ? text.replace(regex, '<mark>$1</mark>') : text;
+        }
+
+        function filterData() {
+            const rawQuery = document.getElementById('searchInput').value.trim();
+            const searchRegex = getSearchRegex(rawQuery);
+            const cats = Array.from(document.querySelectorAll('.filter-chip input:checked')).map(c => c.value);
+            const showExp = document.getElementById('showExpiredCheck').checked, expOnly = document.getElementById('expiredOnlyCheck').checked, newOnly = document.getElementById('newThisMonthCheck').checked;
+            
+            document.getElementById('searchClear').style.display = rawQuery ? "block" : "none";
+            document.getElementById('clearBtn').style.display = (rawQuery || cats.length || showExp || newOnly) ? "block" : "none";
+
+            let filtered = globalData.filter(row => {
+                const rowString = Object.values(row).join(' ');
+                const textMatch = searchRegex ? searchRegex.test(rowString) : true;
+                if (searchRegex) searchRegex.lastIndex = 0;
+
+                let catMatch = true;
+                if (cats.length) {
+                    const target = Object.keys(row).filter(k => k !== COL_PREREQ).map(k => row[k]).join(' ').toLowerCase();
+                    catMatch = cats.some(c => {
+                        if (c === "Security") return /security|compliance|purview|defender/i.test(target);
+                        return target.includes(c.toLowerCase());
+                    });
+                }
+                const rowExp = isExpired(row[COL_END]);
+                let dateMatch = showExp ? (expOnly ? rowExp : true) : !rowExp;
+                if (newOnly && !isStartedThisMonth(row[COL_START])) dateMatch = false;
+                return textMatch && catMatch && dateMatch;
+            });
+
+            // UPDATED SORT: Group status (Active vs Expired). 
+            // Active items are sorted by end date expiring soonest.
+            // Expired items are sorted by end date closest to current time (most recently expired first).
+            filtered.sort((a, b) => {
+                const aExp = isExpired(a[COL_END]);
+                const bExp = isExpired(b[COL_END]);
+
+                // 1. Group status (Active before Expired)
+                if (aExp !== bExp) {
+                    return aExp ? 1 : -1;
+                }
+
+                const dateA = new Date(a[COL_END]).getTime() || 0;
+                const dateB = new Date(b[COL_END]).getTime() || 0;
+
+                // 2. Chronological order logic within groups
+                if (aExp && bExp) {
+                    // Both expired: Sort descending (most recently expired first / closest to now)
+                    return dateB - dateA;
+                } else {
+                    // Both active: Sort ascending (expiring soonest first)
+                    return dateA - dateB;
+                }
+            });
+
+            if (filtered.length === 0 && !showExp && rawQuery.length > 0) {
+                const hasExp = globalData.some(row => {
+                    if (!isExpired(row[COL_END])) return false;
+                    const res = searchRegex ? searchRegex.test(Object.values(row).join(' ')) : false;
+                    if (searchRegex) searchRegex.lastIndex = 0;
+                    return res;
+                });
+                if (hasExp) document.getElementById('expiredModal').classList.add('active');
+            } else { closeModal(); }
+
+            renderTable(filtered, cats.length > 0);
+        }
+
+        function renderTable(data, catActive) {
+            const thead = document.querySelector('#promoTable thead'), tbody = document.getElementById('promoBody'), searchVal = document.getElementById('searchInput').value.trim();
+            document.getElementById('resultCount').innerText = data.length;
+            thead.innerHTML = ''; tbody.innerHTML = '';
+            
+            if (!data.length) {
+                tbody.innerHTML = `<tr><td colspan="100%"><div class="empty-state">...</div></td></tr>`;
+                return;
+            }
+
+            const displayHeaders = headers.filter(h => h !== COL_NAME);
+            const trHead = document.createElement('tr');
+            displayHeaders.forEach(h => { const th = document.createElement('th'); th.innerText = h; trHead.appendChild(th); });
+            thead.appendChild(trHead);
+
+            data.forEach(row => {
+                const tr = document.createElement('tr'); if (isExpired(row[COL_END])) tr.classList.add('expired-row');
+                displayHeaders.forEach(h => {
+                    const td = document.createElement('td'); let raw = row[h], display = highlightText(raw, searchVal);
+                    
+                    if (h === COL_DISC) td.innerHTML = `<span class="discount-badge">${raw}</span>`;
+                    else if (h === COL_PROD) {
+                        td.innerHTML = `
+                            <div class="swap-container">
+                                <span class="swap-main-text">${display}</span>
+                                <span class="swap-hover-text"><span class="swap-prefix">OFFICIAL NAME:</span>${row[COL_NAME]}</span>
+                            </div>`;
+                    }
+                    else if (h === COL_START || h === COL_END) {
+                        const regexFullDate = /((?:<mark>)?[A-Za-z]+(?:<\/mark>)?)\s+((?:<mark>)?\d{1,2}(?:<\/mark>)?,?)\s+((?:<mark>)?\d{4}(?:<\/mark>)?)/gi;
+                        const regexMonthYear = /((?:<mark>)?[A-Za-z]+(?:<\/mark>)?)\s+((?:<mark>)?\d{4}(?:<\/mark>)?)/gi;
+
+                        display = display
+                            .replace(regexFullDate, '$1&nbsp;$2<br>$3')
+                            .replace(regexMonthYear, '$1<br>$2');
+                        td.innerHTML = display;
+                    }
+                    else {
+                        if (h === COL_PREREQ) {
+                            const regexFullDate = /((?:<mark>)?[A-Za-z]{3,}(?:<\/mark>)?\s+(?:<mark>)?\d{1,2}(?:<\/mark>)?,?\s+(?:<mark>)?\d{4}(?:<\/mark>)?)/gi;
+                            const regexMonthYear = /((?:<mark>)?[A-Za-z]{3,}(?:<\/mark>)?\s+(?:<mark>)?\d{4}(?:<\/mark>)?)/gi;
+                            display = display.replace(regexFullDate, '<strong>$1</strong>');
+                            display = display.replace(regexMonthYear, (match) => {
+                                return `<strong>${match}</strong>`;
+                            });
+                        }
+                        td.innerHTML = display;
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        function isExpired(d) { const end = new Date(d), now = new Date(); return !isNaN(end.getTime()) && end < new Date(now.getFullYear(), now.getMonth(), 1); }
+        function isStartedThisMonth(d) { const s = new Date(d), n = new Date(); return !isNaN(s.getTime()) && s.getMonth() === n.getMonth() && s.getFullYear() === n.getFullYear(); }
+        function handleExpiredToggle() { document.getElementById('expiredOnlyWrapper').classList.toggle('visible', document.getElementById('showExpiredCheck').checked); filterData(); }
+        function clearSearch() { document.getElementById('searchInput').value = ""; filterData(); returnFocus(); }
+        function resetFilters() { document.getElementById('searchInput').value = ""; document.querySelectorAll('.filter-chip input').forEach(c => c.checked = false); document.getElementById('showExpiredCheck').checked = false; document.getElementById('newThisMonthCheck').checked = false; handleExpiredToggle(); returnFocus(); }
+        function closeModal() { document.getElementById('expiredModal').classList.remove('active'); }
+        function enableExpiredView() { document.getElementById('showExpiredCheck').checked = true; handleExpiredToggle(); closeModal(); returnFocus(); }
+        function dismissExpiredPrompt() { clearSearch(); closeModal(); }
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            loadData();
+            const input = document.getElementById('searchInput'), fullText = "Search promos, products, or categories ➔";
+            let i = 0; setTimeout(() => { const typing = setInterval(() => { if (i < fullText.length) { input.placeholder += fullText.charAt(i); i++; } else { clearInterval(typing); } }, 30); }, 200);
+            input.focus();
+        });
+    </script>
+</body>
+</html>
